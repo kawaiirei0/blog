@@ -1,0 +1,66 @@
+---
+import { getEntry, render } from "astro:content";
+import Markdown from "@components/misc/Markdown.astro";
+import I18nKey from "../i18n/i18nKey";
+import { i18n } from "../i18n/translation";
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+
+const linksPost = await getEntry("spec", "links");
+
+if (!linksPost) {
+	throw new Error("About page content not found");
+}
+
+const { Content } = await render(linksPost);
+---
+<MainGridLayout>
+    <div class="link-container flex w-full rounded-[var(--radius-large)] overflow-hidden relative min-h-32">
+        <div class="card-base z-10 px-9 py-6 relative w-full ">
+            <Markdown class="mt-2">
+                <Content />
+            </Markdown>
+        </div>
+    </div>
+
+    <style>
+        /* 全局卡片基础样式 */
+        .card-base {
+            background-color: #ffffff;
+            border-radius: var(--radius-large, 12px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+
+        .card-base:hover {
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            transform: translateY(-4px);
+        }
+
+        /* Markdown 内的链接样式 */
+        .card-base a {
+            color: #1d4ed8;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .card-base a:hover {
+            text-decoration: underline;
+            color: #2563eb;
+        }
+
+        .card-base p {
+            margin-top: 0.5rem;
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        /* 响应式网格调整 */
+        @media (min-width: 640px) {
+            .grid-cols-1 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+
+        @media (min-width: 768px) {
+            .grid-cols-1 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        }
+    </style>
+</MainGridLayout>
