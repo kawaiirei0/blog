@@ -3,17 +3,30 @@
 # ==========================================
 # Astro Blog 纯容器化部署脚本 (Rei Edition ✨)
 # ==========================================
-# 特点：宿主机无需 Node/Git，一切在容器内完成
+# 用法: curl -sSL ... | bash -s -- [username] [repo]
 
-# --- 配置区域 ---
-REPO_URL="https://github.com/kobayashirei/blog.git" 
-APP_NAME="astro-blog"
-CONTAINER_NAME="astro-blog-container"
+# --- 动态参数解析 ---
+# 默认值
+GITHUB_USER=${1:-"Charca"}      # 第一个参数: GitHub 用户名 (默认 Charca)
+GITHUB_REPO=${2:-"astro-blog-template"} # 第二个参数: 仓库名 (默认 astro-blog-template)
+
+# 拼接仓库地址
+REPO_URL="https://github.com/${GITHUB_USER}/${GITHUB_REPO}.git"
+
+# 根据仓库名生成本地应用名和容器名
+APP_NAME="${GITHUB_REPO}"
+CONTAINER_NAME="${GITHUB_REPO}-container"
 PORT=4000
-CONTAINER_INNER_APP_PORT=4000
+
+# --- 脚本开始 ---
+echo "=========================================="
+echo "🚀 (Rei) 部署脚本启动！"
+echo "👤 用户: $GITHUB_USER"
+echo "📦 仓库: $GITHUB_REPO"
+echo "🔗 地址: $REPO_URL"
+echo "=========================================="
 
 # 获取当前脚本所在目录的绝对路径 (兼容 Windows Git Bash)
-# 这里的 pwd -W 是 Git Bash 特有的，如果报错则回退到 pwd
 if [[ "$OSTYPE" == "msys" ]]; then
     CURRENT_DIR=$(pwd -W)
 else
@@ -24,11 +37,6 @@ fi
 WORKSPACE_DIR="$CURRENT_DIR/workspace"
 # 最终构建产物的宿主机路径
 DIST_DIR="$WORKSPACE_DIR/$APP_NAME/dist"
-
-# --- 脚本开始 ---
-
-echo "🚀 (Rei) 全容器化部署模式启动！"
-echo "📂 工作目录: $WORKSPACE_DIR"
 
 # 1. 准备工作目录
 mkdir -p "$WORKSPACE_DIR"
@@ -52,9 +60,9 @@ docker run --rm \
     echo '📦 [Container] 启用 PNPM...'
     # corepack prepare 有时会遇到签名验证网络问题，这里直接通过 npm 全局安装 pnpm
     npm install -g pnpm
-    
+
     if [ ! -d \"$APP_NAME\" ]; then
-        echo '� [Container] 克隆仓库...'
+        echo '📥 [Container] 克隆仓库...'
         git clone \"$REPO_URL\" \"$APP_NAME\"
     else
         echo '🔄 [Container] 更新仓库...'
@@ -110,7 +118,7 @@ fi
 # 直接使用国内代理镜像 nginx:alpine，无需构建新镜像，挂载 dist 即可
 docker run -d \
   --name "$CONTAINER_NAME" \
-  -p "$PORT":"$CONTAINER_INNER_APP_PORT" \
+  -p "$PORT":80 \
   -v "$DIST_DIR":/usr/share/nginx/html \
   swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/library/nginx:alpine
 
